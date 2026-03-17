@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoanApplicationRejectedResponse {
+public class LoanApplicationRejectedResponse implements LoanApplicationResponse {
 
     private UUID applicationId;
     private final ApplicationStatus status = ApplicationStatus.REJECTED;

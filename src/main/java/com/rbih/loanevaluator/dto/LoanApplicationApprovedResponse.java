@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoanApplicationApprovedResponse {
+public class LoanApplicationApprovedResponse implements LoanApplicationResponse {
 
     private UUID applicationId;
     private final ApplicationStatus status = ApplicationStatus.APPROVED;
