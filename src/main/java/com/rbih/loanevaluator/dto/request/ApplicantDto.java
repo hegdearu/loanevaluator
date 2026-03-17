@@ -1,4 +1,4 @@
-package com.rbih.loanevaluator.dto;
+package com.rbih.loanevaluator.dto.request;
 
 import com.rbih.loanevaluator.enums.EmploymentType;
 import jakarta.validation.constraints.*;

@@ -1,7 +1,7 @@
 package com.rbih.loanevaluator.controller;
 
-import com.rbih.loanevaluator.dto.LoanApplicationRequest;
-import com.rbih.loanevaluator.dto.LoanApplicationResponse;
+import com.rbih.loanevaluator.dto.request.LoanApplicationRequest;
+import com.rbih.loanevaluator.dto.response.LoanApplicationResponse;
 import com.rbih.loanevaluator.service.LoanApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

@@ -1,8 +1,8 @@
 package com.rbih.loanevaluator.service.engine;
 
-import com.rbih.loanevaluator.dto.ApplicantDto;
-import com.rbih.loanevaluator.dto.LoanDto;
-import com.rbih.loanevaluator.dto.OfferDto;
+import com.rbih.loanevaluator.dto.request.ApplicantDto;
+import com.rbih.loanevaluator.dto.request.LoanDto;
+import com.rbih.loanevaluator.dto.response.OfferDto;
 import com.rbih.loanevaluator.service.calculator.EMICalculator;
 import org.springframework.stereotype.Component;
 

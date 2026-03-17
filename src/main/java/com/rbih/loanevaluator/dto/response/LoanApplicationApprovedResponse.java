@@ -1,11 +1,9 @@
-package com.rbih.loanevaluator.dto;
+package com.rbih.loanevaluator.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.rbih.loanevaluator.enums.ApplicationStatus;
 import com.rbih.loanevaluator.enums.RiskBand;
 import lombok.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter

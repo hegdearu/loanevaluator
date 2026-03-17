@@ -1,4 +1,4 @@
-package com.rbih.loanevaluator.dto;
+package com.rbih.loanevaluator.dto.response;
 
 import com.rbih.loanevaluator.enums.ApplicationStatus;
 import lombok.AllArgsConstructor;

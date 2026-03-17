@@ -1,6 +1,12 @@
 package com.rbih.loanevaluator.service;
 
-import com.rbih.loanevaluator.dto.*;
+import com.rbih.loanevaluator.dto.request.ApplicantDto;
+import com.rbih.loanevaluator.dto.request.LoanApplicationRequest;
+import com.rbih.loanevaluator.dto.request.LoanDto;
+import com.rbih.loanevaluator.dto.response.LoanApplicationApprovedResponse;
+import com.rbih.loanevaluator.dto.response.LoanApplicationRejectedResponse;
+import com.rbih.loanevaluator.dto.response.LoanApplicationResponse;
+import com.rbih.loanevaluator.dto.response.OfferDto;
 import com.rbih.loanevaluator.enums.ApplicationStatus;
 import com.rbih.loanevaluator.enums.RejectionReason;
 import com.rbih.loanevaluator.enums.RiskBand;

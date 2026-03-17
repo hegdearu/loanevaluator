@@ -1,7 +1,7 @@
 package com.rbih.loanevaluator.service.engine;
 
-import com.rbih.loanevaluator.dto.ApplicantDto;
-import com.rbih.loanevaluator.dto.LoanDto;
+import com.rbih.loanevaluator.dto.request.ApplicantDto;
+import com.rbih.loanevaluator.dto.request.LoanDto;
 import com.rbih.loanevaluator.enums.RiskBand;
 import org.springframework.stereotype.Component;
 
