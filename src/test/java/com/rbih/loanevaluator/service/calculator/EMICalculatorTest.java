@@ -27,10 +27,7 @@ class EMICalculatorTest {
                 36
         );
 
-        // Expected EMI ~ 16607.15 (verified with standard EMI calculators)
-        assertTrue(emi.compareTo(new BigDecimal("16600")) > 0);
-        assertTrue(emi.compareTo(new BigDecimal("16700")) < 0);
-        assertEquals(2, emi.scale(), "EMI should have scale of 2");
+        assertEquals(new BigDecimal("16607.15"), emi);
     }
 
     @Test
@@ -42,9 +39,7 @@ class EMICalculatorTest {
                 6
         );
 
-        // Short tenure, small amount — EMI should be roughly 1723
-        assertTrue(emi.compareTo(new BigDecimal("1700")) > 0);
-        assertTrue(emi.compareTo(new BigDecimal("1750")) < 0);
+        assertEquals(new BigDecimal("1725.48"), emi);
     }
 
     @Test
@@ -56,10 +51,19 @@ class EMICalculatorTest {
                 360
         );
 
-        // Long tenure, high rate — EMI should be positive and reasonable
-        assertTrue(emi.compareTo(BigDecimal.ZERO) > 0);
-        assertTrue(emi.compareTo(new BigDecimal("5000000")) < 0,
-                "Monthly EMI should be less than total principal");
+        assertEquals(new BigDecimal("65225.85"), emi);
+    }
+
+    @Test
+    @DisplayName("Calculate EMI at maximum premium rate: 500000 at 16.5% for 36 months")
+    void shouldCalculateEMIAtMaxPremiumRate() {
+        BigDecimal emi = emiCalculator.calculate(
+                new BigDecimal("500000"),
+                new BigDecimal("16.5"),
+                36
+        );
+
+        assertEquals(new BigDecimal("17702.19"), emi);
     }
 
     @Test
@@ -72,7 +76,7 @@ class EMICalculatorTest {
     }
 
     @Test
-    @DisplayName("EMI should increase with higher interest rate for same principal and tenure")
+    @DisplayName("EMI should increase with higher interest rate")
     void emiShouldIncreaseWithHigherRate() {
         BigDecimal principal = new BigDecimal("500000");
         int tenure = 36;
@@ -85,7 +89,7 @@ class EMICalculatorTest {
     }
 
     @Test
-    @DisplayName("EMI should decrease with longer tenure for same principal and rate")
+    @DisplayName("EMI should decrease with longer tenure")
     void emiShouldDecreaseWithLongerTenure() {
         BigDecimal principal = new BigDecimal("500000");
         BigDecimal rate = new BigDecimal("12.0");
@@ -95,5 +99,17 @@ class EMICalculatorTest {
 
         assertTrue(emiShort.compareTo(emiLong) > 0,
                 "Shorter tenure should produce higher EMI");
+    }
+
+    @Test
+    @DisplayName("EMI scale should always be 2")
+    void emiScaleShouldAlwaysBeTwo() {
+        BigDecimal emi = emiCalculator.calculate(
+                new BigDecimal("500000"),
+                new BigDecimal("12.0"),
+                36
+        );
+
+        assertEquals(2, emi.scale());
     }
 }

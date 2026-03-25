@@ -13,7 +13,7 @@ import java.util.Optional;
 @Component
 public class OfferGenerator {
 
-    private static final BigDecimal FIFTY_PERCENT = new BigDecimal("0.50");
+    private static final BigDecimal MAX_OFFER_EMI_TO_INCOME_RATIO = new BigDecimal("0.50");
 
     private final EMICalculator emiCalculator;
 
@@ -25,7 +25,7 @@ public class OfferGenerator {
         BigDecimal principal = BigDecimal.valueOf(loan.getAmount());
         BigDecimal emi = emiCalculator.calculate(principal, interestRate, loan.getTenureMonths());
         BigDecimal monthlyIncome = BigDecimal.valueOf(applicant.getMonthlyIncome());
-        BigDecimal maxAllowedEmi = monthlyIncome.multiply(FIFTY_PERCENT)
+        BigDecimal maxAllowedEmi = monthlyIncome.multiply(MAX_OFFER_EMI_TO_INCOME_RATIO)
                 .setScale(2, RoundingMode.HALF_UP);
 
         if (emi.compareTo(maxAllowedEmi) > 0) {

@@ -1,21 +1,26 @@
 package com.rbih.loanevaluator.service;
 
-import com.rbih.loanevaluator.dto.request.ApplicantDto;
-import com.rbih.loanevaluator.dto.request.LoanApplicationRequest;
-import com.rbih.loanevaluator.dto.request.LoanDto;
-import com.rbih.loanevaluator.dto.response.LoanApplicationApprovedResponse;
-import com.rbih.loanevaluator.dto.response.LoanApplicationRejectedResponse;
-import com.rbih.loanevaluator.dto.response.LoanApplicationResponse;
 import com.rbih.loanevaluator.enums.ApplicationStatus;
 import com.rbih.loanevaluator.enums.EmploymentType;
 import com.rbih.loanevaluator.enums.LoanPurpose;
 import com.rbih.loanevaluator.enums.RiskBand;
+import com.rbih.loanevaluator.dto.request.ApplicantDto;
+import com.rbih.loanevaluator.dto.response.LoanApplicationApprovedResponse;
+import com.rbih.loanevaluator.dto.response.LoanApplicationRejectedResponse;
+import com.rbih.loanevaluator.dto.response.LoanApplicationResponse;
+import com.rbih.loanevaluator.dto.request.LoanApplicationRequest;
+import com.rbih.loanevaluator.dto.request.LoanDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class LoanApplicationServiceTest {
@@ -24,7 +29,7 @@ class LoanApplicationServiceTest {
     private LoanApplicationService service;
 
     @Test
-    @DisplayName("Should approve a standard eligible application")
+    @DisplayName("Should approve a standard eligible application with correct offer details")
     void shouldApproveEligibleApplication() {
         LoanApplicationRequest request = buildRequest("Aravind", 30, 75000.0,
                 EmploymentType.SALARIED, 760, 500000.0, 36, LoanPurpose.PERSONAL);
@@ -38,9 +43,10 @@ class LoanApplicationServiceTest {
         assertEquals(RiskBand.LOW, approved.getRiskBand());
         assertNotNull(approved.getApplicationId());
         assertNotNull(approved.getOffer());
+        assertEquals(new BigDecimal("12.00"), approved.getOffer().getInterestRate());
         assertEquals(36, approved.getOffer().getTenureMonths());
-        assertTrue(approved.getOffer().getEmi().doubleValue() > 0);
-        assertTrue(approved.getOffer().getTotalPayable().doubleValue() > approved.getOffer().getEmi().doubleValue());
+        assertEquals(new BigDecimal("16607.15"), approved.getOffer().getEmi());
+        assertEquals(new BigDecimal("597857.40"), approved.getOffer().getTotalPayable());
     }
 
     @Test
@@ -74,7 +80,7 @@ class LoanApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Should collect multiple rejection reasons")
+    @DisplayName("Should collect multiple rejection reasons without short-circuiting")
     void shouldCollectMultipleRejectionReasons() {
         LoanApplicationRequest request = buildRequest("Test", 58, 20000.0,
                 EmploymentType.SALARIED, 500, 5000000.0, 120, LoanPurpose.HOME);
@@ -85,10 +91,12 @@ class LoanApplicationServiceTest {
         LoanApplicationRejectedResponse rejected = (LoanApplicationRejectedResponse) response;
 
         assertTrue(rejected.getRejectionReasons().size() >= 2);
+        assertTrue(rejected.getRejectionReasons().contains("LOW_CREDIT_SCORE"));
+        assertTrue(rejected.getRejectionReasons().contains("AGE_TENURE_LIMIT_EXCEEDED"));
     }
 
     @Test
-    @DisplayName("Should apply correct risk band MEDIUM for score 720")
+    @DisplayName("Should classify MEDIUM risk for score 720 with correct rate")
     void shouldClassifyMediumRisk() {
         LoanApplicationRequest request = buildRequest("Test", 30, 100000.0,
                 EmploymentType.SALARIED, 720, 500000.0, 36, LoanPurpose.PERSONAL);
@@ -99,10 +107,11 @@ class LoanApplicationServiceTest {
         LoanApplicationApprovedResponse approved = (LoanApplicationApprovedResponse) response;
 
         assertEquals(RiskBand.MEDIUM, approved.getRiskBand());
+        assertEquals(new BigDecimal("13.50"), approved.getOffer().getInterestRate());
     }
 
     @Test
-    @DisplayName("Self-employed applicant should get higher interest rate")
+    @DisplayName("Self-employed should get 1% higher interest rate than salaried")
     void shouldApplyEmploymentPremium() {
         LoanApplicationRequest salariedRequest = buildRequest("Salaried", 30, 100000.0,
                 EmploymentType.SALARIED, 760, 500000.0, 36, LoanPurpose.PERSONAL);
@@ -115,13 +124,12 @@ class LoanApplicationServiceTest {
         LoanApplicationApprovedResponse selfEmployedResponse =
                 (LoanApplicationApprovedResponse) service.evaluate(selfEmployedRequest);
 
-        assertTrue(selfEmployedResponse.getOffer().getInterestRate()
-                        .compareTo(salariedResponse.getOffer().getInterestRate()) > 0,
-                "Self-employed should have higher interest rate");
+        assertEquals(new BigDecimal("12.00"), salariedResponse.getOffer().getInterestRate());
+        assertEquals(new BigDecimal("13.00"), selfEmployedResponse.getOffer().getInterestRate());
     }
 
     @Test
-    @DisplayName("Should apply loan size premium for amount above 10 lakh")
+    @DisplayName("Loan above 10 lakh should get 0.5% size premium")
     void shouldApplyLoanSizePremium() {
         LoanApplicationRequest smallLoan = buildRequest("Small", 30, 200000.0,
                 EmploymentType.SALARIED, 760, 500000.0, 36, LoanPurpose.PERSONAL);
@@ -134,9 +142,23 @@ class LoanApplicationServiceTest {
         LoanApplicationApprovedResponse largeResponse =
                 (LoanApplicationApprovedResponse) service.evaluate(largeLoan);
 
-        assertTrue(largeResponse.getOffer().getInterestRate()
-                        .compareTo(smallResponse.getOffer().getInterestRate()) > 0,
-                "Large loan should have higher interest rate due to size premium");
+        assertEquals(new BigDecimal("12.00"), smallResponse.getOffer().getInterestRate());
+        assertEquals(new BigDecimal("12.50"), largeResponse.getOffer().getInterestRate());
+    }
+
+    @Test
+    @DisplayName("Should approve with HIGH risk band for credit score 620")
+    void shouldClassifyHighRisk() {
+        LoanApplicationRequest request = buildRequest("Test", 25, 120000.0,
+                EmploymentType.SALARIED, 620, 500000.0, 60, LoanPurpose.AUTO);
+
+        LoanApplicationResponse response = service.evaluate(request);
+
+        assertInstanceOf(LoanApplicationApprovedResponse.class, response);
+        LoanApplicationApprovedResponse approved = (LoanApplicationApprovedResponse) response;
+
+        assertEquals(RiskBand.HIGH, approved.getRiskBand());
+        assertEquals(new BigDecimal("15.00"), approved.getOffer().getInterestRate());
     }
 
     private LoanApplicationRequest buildRequest(String name, int age, double income,

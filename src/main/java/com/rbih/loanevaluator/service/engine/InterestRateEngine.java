@@ -27,8 +27,4 @@ public class InterestRateEngine {
 
         return BASE_RATE.add(totalPremium).setScale(2, RoundingMode.HALF_UP);
     }
-
-    public BigDecimal getBaseRate() {
-        return BASE_RATE;
-    }
 }

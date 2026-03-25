@@ -16,7 +16,7 @@ import java.util.Optional;
 public class EMIIncomeRule implements EligibilityRule {
 
     private static final BigDecimal BASE_RATE = new BigDecimal("12.0");
-    private static final BigDecimal SIXTY_PERCENT = new BigDecimal("0.60");
+    private static final BigDecimal MAX_EMI_TO_INCOME_RATIO = new BigDecimal("0.60");
 
     private final EMICalculator emiCalculator;
 
@@ -29,7 +29,7 @@ public class EMIIncomeRule implements EligibilityRule {
         BigDecimal principal = BigDecimal.valueOf(loan.getAmount());
         BigDecimal emi = emiCalculator.calculate(principal, BASE_RATE, loan.getTenureMonths());
         BigDecimal monthlyIncome = BigDecimal.valueOf(applicant.getMonthlyIncome());
-        BigDecimal maxAllowedEmi = monthlyIncome.multiply(SIXTY_PERCENT)
+        BigDecimal maxAllowedEmi = monthlyIncome.multiply(MAX_EMI_TO_INCOME_RATIO)
                 .setScale(2, RoundingMode.HALF_UP);
 
         if (emi.compareTo(maxAllowedEmi) > 0) {

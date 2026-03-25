@@ -1,11 +1,11 @@
 package com.rbih.loanevaluator.service.rule;
 
-import com.rbih.loanevaluator.dto.request.ApplicantDto;
-import com.rbih.loanevaluator.dto.request.LoanDto;
+import com.rbih.loanevaluator.service.calculator.EMICalculator;
 import com.rbih.loanevaluator.enums.EmploymentType;
 import com.rbih.loanevaluator.enums.LoanPurpose;
 import com.rbih.loanevaluator.enums.RejectionReason;
-import com.rbih.loanevaluator.service.calculator.EMICalculator;
+import com.rbih.loanevaluator.dto.request.ApplicantDto;
+import com.rbih.loanevaluator.dto.request.LoanDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,8 +32,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should reject when credit score is below 600")
         void shouldRejectLowCreditScore() {
-            ApplicantDto applicant = applicant(30, 75000, EmploymentType.SALARIED, 580);
-            LoanDto loan = loan(500000, 36);
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 580);
+            LoanDto loan = buildLoan(500000, 36);
 
             Optional<RejectionReason> result = rule.evaluate(applicant, loan);
 
@@ -44,8 +44,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should pass when credit score is exactly 600")
         void shouldPassExactly600() {
-            ApplicantDto applicant = applicant(30, 75000, EmploymentType.SALARIED, 600);
-            LoanDto loan = loan(500000, 36);
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 600);
+            LoanDto loan = buildLoan(500000, 36);
 
             assertTrue(rule.evaluate(applicant, loan).isEmpty());
         }
@@ -53,10 +53,22 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should pass when credit score is above 600")
         void shouldPassAbove600() {
-            ApplicantDto applicant = applicant(30, 75000, EmploymentType.SALARIED, 750);
-            LoanDto loan = loan(500000, 36);
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 750);
+            LoanDto loan = buildLoan(500000, 36);
 
             assertTrue(rule.evaluate(applicant, loan).isEmpty());
+        }
+
+        @Test
+        @DisplayName("Should reject when credit score is 599 (boundary)")
+        void shouldRejectAt599() {
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 599);
+            LoanDto loan = buildLoan(500000, 36);
+
+            Optional<RejectionReason> result = rule.evaluate(applicant, loan);
+
+            assertTrue(result.isPresent());
+            assertEquals(RejectionReason.LOW_CREDIT_SCORE, result.get());
         }
     }
 
@@ -74,8 +86,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should reject when age + tenure in years > 65")
         void shouldRejectWhenAgePlusTenureExceeds65() {
-            ApplicantDto applicant = applicant(55, 75000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(500000, 132); // 11 years → 55 + 11 = 66
+            ApplicantDto applicant = buildApplicant(55, 75000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(500000, 132); // 11 years -> 55 + 11 = 66
 
             Optional<RejectionReason> result = rule.evaluate(applicant, loan);
 
@@ -86,8 +98,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should pass when age + tenure in years = 65")
         void shouldPassWhenExactly65() {
-            ApplicantDto applicant = applicant(53, 75000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(500000, 144); // 12 years → 53 + 12 = 65
+            ApplicantDto applicant = buildApplicant(53, 75000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(500000, 144); // 12 years -> 53 + 12 = 65
 
             assertTrue(rule.evaluate(applicant, loan).isEmpty());
         }
@@ -95,8 +107,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should pass when age + tenure in years < 65")
         void shouldPassWhenBelow65() {
-            ApplicantDto applicant = applicant(30, 75000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(500000, 36); // 3 years → 30 + 3 = 33
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(500000, 36); // 3 years -> 30 + 3 = 33
 
             assertTrue(rule.evaluate(applicant, loan).isEmpty());
         }
@@ -104,8 +116,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should handle fractional tenure years correctly")
         void shouldHandleFractionalTenure() {
-            ApplicantDto applicant = applicant(60, 75000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(500000, 66); // 5.5 years → 60 + 5.5 = 65.5
+            ApplicantDto applicant = buildApplicant(60, 75000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(500000, 66); // 5.5 years -> 60 + 5.5 = 65.5
 
             Optional<RejectionReason> result = rule.evaluate(applicant, loan);
 
@@ -128,9 +140,8 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should reject when EMI exceeds 60% of monthly income")
         void shouldRejectHighEMI() {
-            // Low income, high loan → EMI will exceed 60%
-            ApplicantDto applicant = applicant(30, 20000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(5000000, 36);
+            ApplicantDto applicant = buildApplicant(30, 20000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(5000000, 36);
 
             Optional<RejectionReason> result = rule.evaluate(applicant, loan);
 
@@ -141,19 +152,28 @@ class EligibilityRulesTest {
         @Test
         @DisplayName("Should pass when EMI is within 60% of monthly income")
         void shouldPassWhenEMIWithinLimit() {
-            ApplicantDto applicant = applicant(30, 75000, EmploymentType.SALARIED, 720);
-            LoanDto loan = loan(500000, 36);
+            ApplicantDto applicant = buildApplicant(30, 75000, EmploymentType.SALARIED, 720);
+            LoanDto loan = buildLoan(500000, 36);
 
             assertTrue(rule.evaluate(applicant, loan).isEmpty());
         }
     }
 
-    // Test data helpers
-    private static ApplicantDto applicant(int age, double income, EmploymentType employment, int creditScore) {
-        return new ApplicantDto("Test Applicant", age, income, employment, creditScore);
+    private static ApplicantDto buildApplicant(int age, double income, EmploymentType employment, int creditScore) {
+        ApplicantDto applicant = new ApplicantDto();
+        applicant.setName("Test Applicant");
+        applicant.setAge(age);
+        applicant.setMonthlyIncome(income);
+        applicant.setEmploymentType(employment);
+        applicant.setCreditScore(creditScore);
+        return applicant;
     }
 
-    private static LoanDto loan(double amount, int tenureMonths) {
-        return new LoanDto(amount, tenureMonths, LoanPurpose.PERSONAL);
+    private static LoanDto buildLoan(double amount, int tenureMonths) {
+        LoanDto loan = new LoanDto();
+        loan.setAmount(amount);
+        loan.setTenureMonths(tenureMonths);
+        loan.setPurpose(LoanPurpose.PERSONAL);
+        return loan;
     }
 }
